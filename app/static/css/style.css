@@ -1,0 +1,65 @@
+body{
+    background-image: "static/img/3A.gif";
+    height: 100vh;
+    margin: 0;
+    font-family: "Aria Black";
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+h1{
+    font-size: 15em;
+}
+
+input{
+    padding: 8px;
+    border-radius: 10px;
+    border: 0.5px solid rgb(204, 204, 204);
+}
+
+input:focus{
+    border: 1px solid rgb(204, 204, 204);
+}
+
+button{
+    padding: 8px 15px;
+    border: none;
+    border-radius: 30px;
+    margin: 20px;
+    font-weight: bold;
+}
+
+form{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.painting{
+    width: 160px
+}
+
+#upload-box{
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
+}
+
+.img-box{
+    margin-top: 60px;
+    padding-bottom: 60px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
