@@ -1,9 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, send_file, jsonify
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.utils import secure_filename
 from PIL import Image
 import os
+import shutil
+import subprocess
 import secrets
 
 app = Flask(__name__)
@@ -20,6 +22,7 @@ app.secret_key = secrets.token_hex(16)
 app.config['UPLOAD_FOLDER'] = 'app/static/medias'
 app.config['THMBS_FOLDER'] = 'app/static/thmbs'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
+app.config['ARCHIVE_FOLDER'] = 'app/archive'
 
 # Classe User pour Flask-Login
 class User(UserMixin):
@@ -115,6 +118,29 @@ def upload():
         # Enregistrement de l'image redimensionnée
         resized_image.save(thumbnail_path)
     return redirect(url_for('protected'))
+
+# Route pour télécharger l'archive des médias via Transfer.sh
+@app.route('/download', methods=['GET'])
+def download_media_archive():
+    # Chemin du dossier médias
+    media_folder = app.config['UPLOAD_FOLDER']
+    
+    # Chemin de l'archive à créer dans le dossier des archives
+    zip_path = os.path.join(app.config['ARCHIVE_FOLDER'], 'medias.zip')
+
+    # Créer une archive contenant tous les fichiers du dossier médias
+    try:
+        shutil.make_archive(os.path.join(app.config['ARCHIVE_FOLDER'], 'medias'), 'zip', media_folder)
+    except Exception as e:
+        return jsonify({'error': f"Une erreur est survenue lors de la création de l'archive : {str(e)}"})
+
+    # Envoyer l'archive à Transfer.sh pour le téléchargement
+    try:
+        response = subprocess.check_output(['curl', '--upload-file', zip_path, 'https://transfer.sh/medias.zip'])
+        download_link = response.decode('utf-8').strip()
+        return jsonify({'success': True, 'download_link': download_link})
+    except subprocess.CalledProcessError as e:
+        return jsonify({'error': f"Une erreur est survenue lors de l'envoi de l'archive à Transfer.sh : {str(e)}"})
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)
