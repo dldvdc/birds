@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.utils import secure_filename
@@ -38,37 +38,44 @@ def allowed_file(filename):
 def load_user(user_id):
     return User(user_id)
 
-# Générer un nom de fichier unique
+# Fonction pour récupérer le numéro de fichier le plus élevé dans le répertoire 'thmbs'
+def get_highest_file_number():
+    thmbs_folder = app.config['THMBS_FOLDER']
+    files = os.listdir(thmbs_folder)
+    max_number = 0
+    for file in files:
+        filename, file_extension = os.path.splitext(file)
+        if file_extension.lower() in app.config['ALLOWED_EXTENSIONS']:
+            try:
+                file_number = int(filename.split('_')[1])
+                max_number = max(max_number, file_number)
+            except ValueError:
+                pass  # Ignorer les fichiers qui ne suivent pas le format attendu
+    return max_number
+
+# Initialiser le compteur de fichiers à partir du numéro le plus élevé dans le répertoire 'thmbs'
+file_counter = get_highest_file_number()
+
+# Générer un nom de fichier unique numéroté en continuant à partir du numéro le plus élevé dans le répertoire 'thmbs'
 def generate_unique_filename(filename):
-    random_name = secrets.token_hex(8)  # 8 caractères hexadécimaux, ajustez la longueur selon vos besoins
-    _, file_extension = os.path.splitext(filename)
-    return f"{random_name}{file_extension}"
+    global file_counter
+    file_counter += 1
+    file_extension = os.path.splitext(filename)[1].lower()
+    return f"{file_counter:04d}{file_extension}"  # Format numérique avec 4 chiffres remplis de zéros à gauche si nécessaire
 
 # Page protégée par l'authentification
 @app.route('/')
 @login_required
 def protected():
     thmbs_folder = app.config['THMBS_FOLDER']
-
-    # Ajoutez un message d'impression pour vérifier le chemin absolu du répertoire
-    abs_thmbs_path = os.path.abspath(thmbs_folder)
-    print(f"Chemin absolu du répertoire {thmbs_folder}: {abs_thmbs_path}")
-
-    # Affichez le contenu du répertoire pour le débogage
-    print(f"Contenu de {thmbs_folder} : {os.listdir(thmbs_folder)}")
-
-    images = os.listdir(thmbs_folder)
-    # Trier les images par date de téléchargement (en utilisant la dernière modification)
-    images = sorted(images, key=lambda x: os.path.getmtime(os.path.join(thmbs_folder, x)), reverse=True)
+    images = sorted(os.listdir(thmbs_folder), key=lambda x: os.path.getmtime(os.path.join(thmbs_folder, x)), reverse=True)
     return render_template('index.html', images=images, user=current_user)
-
 
 # Page de connexion
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     # Déplacez la génération du mot de passe haché à l'intérieur de cette fonction
     hashed_password = bcrypt.generate_password_hash("votremotdepasse").decode("utf-8")
-
     if request.method == 'POST':
         password_attempt = request.form['password']
         if bcrypt.check_password_hash(hashed_password, password_attempt):
@@ -91,31 +98,22 @@ def logout():
 def upload():
     if 'files' not in request.files:
         return redirect(request.url)
-
     files = request.files.getlist('files')
-
     for file in files:
         if file.filename == '' or not allowed_file(file.filename):
             return redirect(request.url)
-
         # Générer un nom de fichier unique
         new_filename = generate_unique_filename(file.filename)
-
         # Enregistrement dans le dossier 'medias' avec le nouveau nom
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], new_filename))
-
         # Enregistrement dans le dossier 'thmbs' avec redimensionnement et le nouveau nom
-        thumbnail_path = os.path.join(app.config['THMBS_FOLDER'], f"thumb_{new_filename}")
-
+        thumbnail_path = os.path.join(app.config['THMBS_FOLDER'], f"_{new_filename}")
         # Ouvrir l'image avec Pillow
         original_image = Image.open(os.path.join(app.config['UPLOAD_FOLDER'], new_filename))
-
         # Redimensionner l'image à une largeur de 180 pixels
         resized_image = original_image.resize((180, int(original_image.height * (180 / original_image.width))))
-
         # Enregistrement de l'image redimensionnée
         resized_image.save(thumbnail_path)
-
     return redirect(url_for('protected'))
 
 if __name__ == '__main__':

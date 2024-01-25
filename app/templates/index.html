@@ -7,16 +7,32 @@
     <title>###</title>
 </head>
 <body>
+    <!-- Div pour afficher l'animation de chargement -->
+    <div id="loading-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 999; text-align: center;">
+        <img src="{{ url_for('static', filename='loading.gif') }}" alt="Chargement..." style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+    </div>
+
+    <!-- Formulaire d'upload -->
     <div id="upload-box">
-        <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
-            <input type="file" name="files" multiple /></br>
+        <form id="upload-form" action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
+            <input type="file" name="files" multiple /><br>
             <input type="submit" value="Upload">
         </form>
     </div>
+
+    <!-- Galerie d'images -->
     <div class="img-box">
         {% for image in images %}
-        <img class="painting" src="{{ url_for('static', filename='thmbs/' + image) }}" alt="{{ image }}">
+        <img class="painting" title="{{ image }}" src="{{ url_for('static', filename='thmbs/' + image) }}" alt="{{ image }}">
         {% endfor %}
     </div>
+
+    <script>
+        // Lorsque le formulaire d'upload est soumis
+        document.getElementById('upload-form').addEventListener('submit', function() {
+            // Afficher l'animation de chargement
+            document.getElementById('loading-overlay').style.display = 'block';
+        });
+    </script>
 </body>
 </html>
