@@ -10,14 +10,13 @@ COPY app/ app/
 
 # Installer les dépendances
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install gunicorn
 
-# Exposer le port sur lequel Gunicorn écoute
+# Exposer le port sur lequel Flask écoute
 EXPOSE 5000
 
 # Définir l'environnement de production
 ENV FLASK_APP=app
 ENV FLASK_RUN_HOST=0.0.0.0
 
-# Commande pour démarrer l'application avec Gunicorn
-CMD ["gunicorn", "-b", "0.0.0.0:5000", "app.app:app"]
+# Commande pour démarrer l'application Flask
+CMD ["flask", "run"]
