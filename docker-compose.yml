@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  flask:
+    build: .
+    ports:
+      - "2066:5000"
+    volumes:
+      - ./app:/app/app
+    environment:
+      FLASK_ENV: development
+
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx.dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - flask
